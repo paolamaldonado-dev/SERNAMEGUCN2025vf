@@ -1,0 +1,2418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Análisis Financiero</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .controls {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input[type="text"] {
+            padding: 12px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .btn-reset {
+            padding: 12px 25px;
+            background: #95a5a6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            align-self: flex-end;
+        }
+
+        .btn-reset:hover {
+            background: #7f8c8d;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 4px solid #3498db;
+        }
+
+        .kpi-card.secondary {
+            border-left-color: #95a5a6;
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .kpi-value.money {
+            color: #3498db;
+        }
+
+        .chart-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin-bottom: 20px;
+        }
+
+        .table-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background: #ecf0f1;
+        }
+
+        th {
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .money {
+            font-weight: 600;
+            color: #3498db;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .tag-operacional {
+            background: #d5e8f5;
+            color: #2874a6;
+        }
+
+        .tag-personal {
+            background: #e8daf5;
+            color: #6c3483;
+        }
+
+        .tag-pendiente {
+            background: #fdebd0;
+            color: #b9770e;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #95a5a6;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+
+            table {
+                font-size: 11px;
+            }
+
+            th, td {
+                padding: 8px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Dashboard de Análisis Financiero</h1>
+        <p>Sistema de visualización y análisis de gastos operacionales y personales</p>
+    </div>
+
+    <div class="controls">
+        <div class="control-grid">
+            <div class="control-group">
+                <label>Tipo de Gasto</label>
+                <select id="filtroTipoGasto">
+                    <option value="">Todos los tipos</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Mes</label>
+                <select id="filtroMes">
+                    <option value="">Todos los meses</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Búsqueda</label>
+                <input type="text" id="busqueda" placeholder="Buscar por descripción, proveedor...">
+            </div>
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <button class="btn-reset" onclick="resetearFiltros()">Limpiar Filtros</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <div class="chart-section">
+        <h2 class="chart-title">Evolución de Gastos por Mes</h2>
+        <div class="chart-container">
+            <canvas id="chartMensual"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-section">
+        <h2 class="chart-title">Distribución por Tipo de Gasto</h2>
+        <div class="chart-container">
+            <canvas id="chartTipoGasto"></canvas>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <h2 class="chart-title">Detalle de Registros</h2>
+        <div style="overflow-x: auto;">
+            <table id="tablaDetalle">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Ítem</th>
+                        <th>Proveedor</th>
+                        <th>Descripción</th>
+                        <th>Monto</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+const DATOS_FINANCIEROS = [
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20192372 - 007",
+    "fecha": "2025-03-27",
+    "num_documento": "1",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS ",
+    "descripcion": "REEMBOLSO TRASLADO A BENEFICIARIAS ANDACOLLO - COQUIMBO -ANDACOLLO, SEGÚN ASISTENCIA AL MÓDULO 1 Y 2 DEL PROGRAMA MPPS EL SÁBADO 29 DE MARZO ",
+    "forma_pago": "EFECTIVO",
+    "monto": 30000.0,
+    "mes": 3,
+    "mes_nombre": "March 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20225193 - 005",
+    "fecha": "2025-04-04",
+    "num_documento": "2",
+    "tipo_documento": "OTRO",
+    "proveedor": "CLAUDIA BORTOLOTTI NARDON",
+    "descripcion": "REEMBOLSO TRASLADO A BENEFICIARIAS OVALLE, PUNITAQUI, COMBARBALÁ, SEGÚN ASISTENCIA AL MÓDULO 1 Y 2 DEL PROGRAMA MPPS 05 DE ABRIL",
+    "forma_pago": "EFECTIVO",
+    "monto": 25000.0,
+    "mes": 4,
+    "mes_nombre": "April 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20225193 - 005",
+    "fecha": "2025-04-04",
+    "num_documento": "3",
+    "tipo_documento": "OTRO",
+    "proveedor": "CLAUDIA BORTOLOTTI NARDON",
+    "descripcion": "REEMBOLSO TRASLADO A BENEFICIARIAS OVALLE, PUNITAQUI, COMBARBALÁ, SEGÚN ASISTENCIA AL MÓDULO 1 Y 2 DEL PROGRAMA MPPS 05 DE ABRIL",
+    "forma_pago": "EFECTIVO",
+    "monto": 7000.0,
+    "mes": 4,
+    "mes_nombre": "April 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20225193 - 005",
+    "fecha": "2025-04-04",
+    "num_documento": "5",
+    "tipo_documento": "OTRO",
+    "proveedor": "CLAUDIA BORTOLOTTI NARDON",
+    "descripcion": "REEMBOLSO TRASLADO A BENEFICIARIAS VICUÑA - LA SERENA, SEGÚN ASISTENCIA AL MÓDULO 1 Y 2 DEL PROGRAMA MPPS 25 DE ABRIL",
+    "forma_pago": "EFECTIVO",
+    "monto": 26000.0,
+    "mes": 4,
+    "mes_nombre": "April 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "MATERIAL",
+    "comprobante": "20225193 - 005",
+    "fecha": "2025-04-04",
+    "num_documento": "149705",
+    "tipo_documento": "BOLETA",
+    "proveedor": "LIBRERÍA DIPARE",
+    "descripcion": "MATERIALES, ETIQUETAS AUTOADHERSIVAS PARA LA IDENTIFICACIÓN DE MUJERES EN LAS CLASES PRESENCIALES EN EL PROGRAMA SERNAMEG",
+    "forma_pago": "EFECTIVO",
+    "monto": 6575.0,
+    "mes": 4,
+    "mes_nombre": "April 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "MATERIAL",
+    "comprobante": "20225193 - 005",
+    "fecha": "2025-04-04",
+    "num_documento": "3032947811",
+    "tipo_documento": "BOLETA",
+    "proveedor": "CENCOSUD RETAIL S.A.",
+    "descripcion": "ALIMENTO, GALLETAS ECOVIDA PARA EL COFFEE DE LAS CLASES PRESENCIALES REGIÓN DE COQUIMBO",
+    "forma_pago": "EFECTIVO",
+    "monto": 7197.0,
+    "mes": 4,
+    "mes_nombre": "April 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "ALIMENTACIÓN",
+    "comprobante": "20230956 - 002",
+    "fecha": "2025-04-07",
+    "num_documento": "23835176",
+    "tipo_documento": "FACTURA",
+    "proveedor": "CENCOSUD RETAIL S.A.",
+    "descripcion": "COMPRA DE GALLETAS PARA COFFEE BREACK CURSOS PRESENCIALES MÓDULO 1 Y 2",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 12419.0,
+    "mes": 4,
+    "mes_nombre": "April 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "ALIMENTACIÓN",
+    "comprobante": "20265467 - 001",
+    "fecha": "2025-04-15",
+    "num_documento": "860",
+    "tipo_documento": "FACTURA",
+    "proveedor": "CLAUDIO ALBERTO HERNÁNDEZ HERNÁNDEZ",
+    "descripcion": "COFFE BREAK PARA LOS MÓDULOS PRESENCIALES EL PROGRAMA DE MUJERES Y PARTICIPACIÓN SOCIAL",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 480000.0,
+    "mes": 4,
+    "mes_nombre": "April 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "MATERIAL",
+    "comprobante": "20291594 - 017",
+    "fecha": "2025-04-25",
+    "num_documento": "10830",
+    "tipo_documento": "FACTURA",
+    "proveedor": "SOCIEDAD DE IMPRESIONES INTEGRADOS MULTIPROPOSITO LTDA",
+    "descripcion": "COMPRA TABLERO DE JUEGO DE MESA - MATERIAL DIDÁCTICO PARA MÓDULOS PRESENCIALES PROGRAMA MPPS",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 54835.0,
+    "mes": 4,
+    "mes_nombre": "April 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "MATERIAL",
+    "comprobante": "20325880 - 011",
+    "fecha": "2025-05-06",
+    "num_documento": "112028",
+    "tipo_documento": "FACTURA",
+    "proveedor": "COMERCIALIZADORA DE PAPELES INDUSTRIALES E INSUMOS GRAFICOS SPA",
+    "descripcion": "COMPRA DE MATERIALES VARIOS PARA TALLERES DE LOS MÓDULOS PRESENCIALES",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 29450.0,
+    "mes": 5,
+    "mes_nombre": "May 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "20407812 - 111",
+    "fecha": "2025-05-30",
+    "num_documento": "314",
+    "tipo_documento": "BOLETA HONORARIOS",
+    "proveedor": "PAMELA TULA FRIAS ",
+    "descripcion": "RELATORA MÓDULO 1: ADMINISTRACIÓN DEL ESTADO Y PP PROGRAMA MPPS DE SERNAMEG - MAYO 2025",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 273600.0,
+    "mes": 5,
+    "mes_nombre": "May 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20359844 - 011",
+    "fecha": "2025-05-15",
+    "num_documento": "6",
+    "tipo_documento": "OTRO",
+    "proveedor": "CLAUDIA BORTOLOTTI NARDON ",
+    "descripcion": "REEMBOLSO TRASLADO DE BENEFICIARIAS- OVALLE, PUNITAQUI, LA CHIMBA, OVALLE, POR PARTICIPACIÓN PROGRAMA MPPS - SEGÚN ASISTENCIA AL MÓDULO 4 Y 5, EN LA CIUDAD OVALLE",
+    "forma_pago": "EFECTIVO",
+    "monto": 20000.0,
+    "mes": 5,
+    "mes_nombre": "May 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20359844 - 011",
+    "fecha": "2025-05-15",
+    "num_documento": "7",
+    "tipo_documento": "OTRO",
+    "proveedor": "CLAUDIA BORTOLOTTI NARDON ",
+    "descripcion": "REEMBOLSO TRASLADO DE BENEFICIARIAS - VICUÑA, LA SERENA, SAN ISIDRO, ANDACOLLO, POR PARTICIPACIÓN EN EL PROGRAMA MPPS, SEGÚN ASISTENCIA MÓDULO 4 Y 5 EN LA CIUDAD DE LA SERENA. ",
+    "forma_pago": "EFECTIVO",
+    "monto": 24000.0,
+    "mes": 5,
+    "mes_nombre": "May 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "20309536 - 002",
+    "fecha": "2025-04-30",
+    "num_documento": "81",
+    "tipo_documento": "BOLETA HONORARIOS",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "ASISTENTE ADM Y RENDICIÓN DE CTAS - PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025 - MES DE MARZO Y ABRIL",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 256500.0,
+    "mes": 4,
+    "mes_nombre": "April 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "20309364 - 072",
+    "fecha": "2025-04-30",
+    "num_documento": "129",
+    "tipo_documento": "BOLETA HONORARIOS",
+    "proveedor": "CLAUDIA BORTOLOTTI NARDON",
+    "descripcion": "COORDINADORA GENERAL DEL PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025 - MARZO Y ABRIL",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 598500.0,
+    "mes": 4,
+    "mes_nombre": "April 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "20407744 -88",
+    "fecha": "2025-05-30",
+    "num_documento": "133",
+    "tipo_documento": "BOLETA HONORARIOS",
+    "proveedor": "CLAUDIA BORTOLOTTI NARDON ",
+    "descripcion": "COORDINADORA GENERAL DEL PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025- MES DE MAYO",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 299250.0,
+    "mes": 5,
+    "mes_nombre": "May 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "20407812 - 113",
+    "fecha": "2025-05-30",
+    "num_documento": "82",
+    "tipo_documento": "BOLETA HONORARIOS",
+    "proveedor": "PAOLA MALDONADO CORTÉS ",
+    "descripcion": "ASISTENTE ADM Y RENDICIÓN DE CTAS-PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025 -MAYO",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 128250.0,
+    "mes": 5,
+    "mes_nombre": "May 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "8209629406",
+    "fecha": "2025-05-26",
+    "num_documento": "129",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "CLAUDIA BORTOLOTTI NARDON ",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE MARZO-ABRIL, SEGÚN BH 129",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 101500.0,
+    "mes": 5,
+    "mes_nombre": "May 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "8209629406",
+    "fecha": "2025-05-26",
+    "num_documento": "81",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "PAOLA MALDONADO CORTÉS ",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29- POR HONORARIOS CORRESPONDIENTE AL MES DE MARZO-ABRIL, SEGÚN BH 81",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 43500.0,
+    "mes": 5,
+    "mes_nombre": "May 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS ",
+    "comprobante": "20509842 - 007",
+    "fecha": "2025-06-30",
+    "num_documento": "85",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "ASISTENTE ADM Y RENDICIÓN DE CTAS - PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025 JUNIO ",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 128250.0,
+    "mes": 6,
+    "mes_nombre": "June 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS ",
+    "comprobante": "20509781 - 086",
+    "fecha": "2025-06-30",
+    "num_documento": "134",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "CLAUDIA BORTOLOTTI NARDON ",
+    "descripcion": "COORDINADORA GENERAL DEL PROGRAMA MUJER Y PARTICIPACIÓN POLITICA SOCIAL 2025 SERNAMEG JUNIO ",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 299250.0,
+    "mes": 6,
+    "mes_nombre": "June 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS ",
+    "comprobante": "8282231256",
+    "fecha": "2025-06-23",
+    "num_documento": "133",
+    "tipo_documento": "RETENCIÓN HONORARIOS ",
+    "proveedor": "CLAUDIA BORTOLOTTI NARDON",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE MAYO, SEGÚN BOLETA 133.",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 50750.0,
+    "mes": 6,
+    "mes_nombre": "June 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS ",
+    "comprobante": "8282231256",
+    "fecha": "2025-06-23",
+    "num_documento": "82",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "PAOLA MALDONADO CORTÉS ",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE MAYO, SEGÚN BOLETA 82.",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 21750.0,
+    "mes": 6,
+    "mes_nombre": "June 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS ",
+    "comprobante": "20620326 - 078",
+    "fecha": "2025-07-31",
+    "num_documento": "137",
+    "tipo_documento": "BOLETA HONORARIOS",
+    "proveedor": "CLAUDIA RAQUELE BORTOLOTTI NARDON",
+    "descripcion": "COORDINADORA GENERAL DEL PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025 - SERNAMEG - JULIO",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 299250.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS ",
+    "comprobante": "20620608 - 025",
+    "fecha": "2025-07-31",
+    "num_documento": "86",
+    "tipo_documento": "BOLETA HONORARIOS",
+    "proveedor": "PAOLA ANDREA MALDONADO CORTÉS",
+    "descripcion": "ASISTENTE ADM Y RENDICIÓN DE CTAS - PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025 - JULIO",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 128250.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8480565096",
+    "fecha": "2025-09-22",
+    "num_documento": "303",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "ERIKA LOPEZ GUERRERO",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE AGOSTO, SEGÚN BOLETA 303",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 198650.0,
+    "mes": 9,
+    "mes_nombre": "September 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8480565096",
+    "fecha": "2025-09-22",
+    "num_documento": "159",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "ALEX VALDIVIA ALBORNOZO",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE AGOSTO, SEGÚN BOLETA 303",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 46400.0,
+    "mes": 9,
+    "mes_nombre": "September 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8480565096",
+    "fecha": "2025-09-22",
+    "num_documento": "131",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "CAROLINA SALINAS ALARCON",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE AGOSTO, SEGÚN BOLETA 131",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 101500.0,
+    "mes": 9,
+    "mes_nombre": "September 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS ",
+    "comprobante": "8282231256",
+    "fecha": "2025-06-23",
+    "num_documento": "314",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "PAMELA TULA FRÍAS ",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE MAYO, SEGÚN BOLETA 314.",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 46400.0,
+    "mes": 6,
+    "mes_nombre": "June 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "857432661",
+    "fecha": "2025-10-27",
+    "num_documento": "202",
+    "tipo_documento": "BOLETA DE HONORARIOS ",
+    "proveedor": "YANIXZA ISABEL ALFARO BRICEÑO",
+    "descripcion": "RELATORA CHARLA MODULO 3 Y 4 COMPONENTE 3 DEL PROGRAMA MPPS SERNAMEG OCTUBRE_B:202_YANIXZA ALFARO_31101889",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 102600.0,
+    "mes": 10,
+    "mes_nombre": "October 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "857432460",
+    "fecha": "2025-10-27",
+    "num_documento": "310",
+    "tipo_documento": "BOLETA DE HONORARIOS",
+    "proveedor": "ERIKA PILAR LÓPEZ GUERRERO",
+    "descripcion": "RELATORA CHARLA MODULO 1 Y 2 COMPONENTE 3 DEL PROGRAMA MPPS SERNAMEG OCTUBRE_B: 310_ERIKA LOPEZ_31101889",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 188100.0,
+    "mes": 10,
+    "mes_nombre": "October 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "MATERIALES ",
+    "comprobante": "854731771",
+    "fecha": "2025-10-06",
+    "num_documento": "117192",
+    "tipo_documento": "FACTURA",
+    "proveedor": "COMERCIALIZADORA DE PAPELES INDUSTRIALES E INSUMOS GRAFICOS SPA",
+    "descripcion": "COMPRA DE MATERIALES VARIOS PARA LA EJECUCIÓN DE MATERIAL DE ESTUDIOS PARA LOS TALLERES",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 135998.0,
+    "mes": 10,
+    "mes_nombre": "October 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8611719456",
+    "fecha": "2025-11-20",
+    "num_documento": "202",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "YANXZA ALFARO BRICEÑO",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE OCTUBRE, SEGÚN BOLETA 202",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 17400.0,
+    "mes": 11,
+    "mes_nombre": "November 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8611719456",
+    "fecha": "2025-11-20",
+    "num_documento": "310",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "ERIKA LÓPEZ GUERRERO",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE OCTUBRE, SEGÚN BOLETA 310",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 31900.0,
+    "mes": 11,
+    "mes_nombre": "November 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "857433982",
+    "fecha": "2025-11-26",
+    "num_documento": "205",
+    "tipo_documento": "BOLETA DE HONORARIOS ",
+    "proveedor": "YANIXZA ISABEL ALFARO BRICEÑO",
+    "descripcion": "TUTORÍAS Y ACOMPAÑAMIENTO PERSONALIZADOS A EQUIPOS DE TRABAJO PARA EL PROYECTO FINAL MPPS SERNAMEG NOVIEMBRE_B:205_YANIXZA ALFARO_31101889",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 1231200.0,
+    "mes": 11,
+    "mes_nombre": "November 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "857433659",
+    "fecha": "2025-11-26",
+    "num_documento": "311",
+    "tipo_documento": "BOLETA DE HONORARIOS",
+    "proveedor": "ERIKA PILAR LÓPEZ GUERRERO",
+    "descripcion": "TUTORIAS Y ACOMPAÑAMIENTO PERSONALIZADOS A EQUIPOS DE TRABAJO PARA EL PROYECTO FINAL PROGRAMA MPPS SERNAMEG OCTUBRE_B: 311_ERIKA LOPEZ_31101889",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 615600.0,
+    "mes": 11,
+    "mes_nombre": "November 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8547433527",
+    "fecha": "2025-11-26",
+    "num_documento": "133",
+    "tipo_documento": "BOLETA DE HONORARIOS",
+    "proveedor": "CAROLINA DEL PILAR SALINAS ALARCON",
+    "descripcion": "TUTORIAS Y ACOMPAÑAMIENTO PERSONALIZADOS A EQUIPOS DE TRABAJO PARA EL PROYECTO FINAL PROGRAMA MPPS SERNAMEG OCTUBRE_B: 133_CAROLINA SALINAS_31101889",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 1231200.0,
+    "mes": 11,
+    "mes_nombre": "November 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8686615216",
+    "fecha": "2025-12-22",
+    "num_documento": "205",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "YANXZA ALFARO BRICEÑO",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE NOVIEMBRE, SEGÚN BOLETA 205",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 208800.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8686615216",
+    "fecha": "2025-12-22",
+    "num_documento": "311",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "ERIKA LÓPEZ GUERRERO",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE NOVIEMBRE, SEGÚN BOLETA 311",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 104400.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8686615216",
+    "fecha": "2025-12-22",
+    "num_documento": "133",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "CAROLINA DEL PILAR SALINAS ALARCON",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE NOVIEMBRE, SEGÚN BOLETA 133",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 208800.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "857435033",
+    "fecha": "2025-12-23",
+    "num_documento": "51",
+    "tipo_documento": "BOLETA DE HONORARIOS",
+    "proveedor": "MARÍA DEL PILAR VILLAR",
+    "descripcion": "MAESTRA DE CEREMONIA DE CIERRE PROGRAMA SERNAMEG MPPS, DICIEMBRE 2025",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 80159.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "857435192",
+    "fecha": "2025-12-23",
+    "num_documento": "71",
+    "tipo_documento": "BOLETA DE HONORARIOS ",
+    "proveedor": "TIARE PEREZ VALDERRAMA",
+    "descripcion": "STAFF DE APOYO LOGÍSTICO CEREMONIA DE CIERRE SERNAMEG 2025 MPPS, DICIEMBRE",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 35000.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "857434715",
+    "fecha": "2025-12-23",
+    "num_documento": "187",
+    "tipo_documento": "BOLETA DE HONORARIOS",
+    "proveedor": "CLAUDIA LEMUS VÉLIZ ",
+    "descripcion": "STAFF DE APOYO LOGÍSTICO CEREMONIA DE CIERRE SERNAMEG 2025 MPPS, DICIEMBRE",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 35000.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "857434914",
+    "fecha": "2025-12-23",
+    "num_documento": "193",
+    "tipo_documento": "BOLETA DE HONORARIOS",
+    "proveedor": "LUCÍA SANHUEZA RIVERA ",
+    "descripcion": "STAFF DE APOYO LOGÍSTICO CEREMONIA DE CIERRE SERNAMEG 2025 MPPS, DICIEMBRE",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 35000.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "857434683",
+    "fecha": "2025-12-23",
+    "num_documento": "105",
+    "tipo_documento": "BOLETA DE HONORARIOS",
+    "proveedor": "CONSTANZA CASTILLO ESPINOZA",
+    "descripcion": "ELABORACIÓN Y PRODUCCIÓN AUDIOVISUAL PARA LA CEREMONIA DE CIERRE DEL PROGRAMA MPPS SERNAMEG 2025, DICIEMBRE ",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 80000.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "MATERIALES PRODUCCIÓN",
+    "comprobante": "8574166",
+    "fecha": "2026-01-14",
+    "num_documento": "1402",
+    "tipo_documento": "FACTURA",
+    "proveedor": "EL ATICO PRODUCCIONES SPA ",
+    "descripcion": "SERVICIO DE AMPLIFICACIÓN Y PANTALLA LED PARA CEREMONIA DE CIERRE DEL PROGRAMA SERNAMEG 2025 MPPS, DICIEMBRE",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 476000.0,
+    "mes": 1,
+    "mes_nombre": "January 2026",
+    "año": 2026
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "DCTO EN ESPERA",
+    "fecha": null,
+    "num_documento": "51",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "MARÍA DEL PILAR VILLAR",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE DICIEMBRE, SEGÚN BOLETA 51",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 13594.0,
+    "mes": null,
+    "mes_nombre": "Pendiente",
+    "año": null
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "DCTO EN ESPERA",
+    "fecha": null,
+    "num_documento": "71",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "TIARE PEREZ VALDERRAMA",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE DICIEMBRE, SEGÚN BOLETA 71",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 5936.0,
+    "mes": null,
+    "mes_nombre": "Pendiente",
+    "año": null
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "DCTO EN ESPERA",
+    "fecha": null,
+    "num_documento": "187",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "CLAUDIA LEMUS VÉLIZ ",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE DICIEMBRE, SEGÚN BOLETA 187",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 5936.0,
+    "mes": null,
+    "mes_nombre": "Pendiente",
+    "año": null
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "DCTO EN ESPERA",
+    "fecha": null,
+    "num_documento": "193",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "LUCÍA SANHUEZA RIVERA ",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE DICIEMBRE, SEGÚN BOLETA 193",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 5936.0,
+    "mes": null,
+    "mes_nombre": "Pendiente",
+    "año": null
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "DCTO EN ESPERA",
+    "fecha": null,
+    "num_documento": "105",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "CONSTANZA CASTILLO ESPINOZA",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE DICIEMBRE, SEGÚN BOLETA 193",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 13567.0,
+    "mes": null,
+    "mes_nombre": "Pendiente",
+    "año": null
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "MATERIALES",
+    "comprobante": "857435435",
+    "fecha": "2026-01-09",
+    "num_documento": "27675",
+    "tipo_documento": "FACTURA",
+    "proveedor": "CRISTIAN CÉSAR HIDALGO CUEVAS Y CÍA LTDA.",
+    "descripcion": "MATERIALES REGALOS PARA LAS PARTICIPANTES DEL PROGRAMA MPPS SERNAMEG 2025, DICIEMBRE",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 850000.0,
+    "mes": 1,
+    "mes_nombre": "January 2026",
+    "año": 2026
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "MATERIALES",
+    "comprobante": "857435435",
+    "fecha": "2026-01-09",
+    "num_documento": "27679",
+    "tipo_documento": "FACTURA",
+    "proveedor": "CRISTIAN CÉSAR HIDALGO CUEVAS Y CÍA LTDA.",
+    "descripcion": "INFOGRAFÍA IMPRESAS 90*51 PARA LAS PARTIICPANTES DEL PROGRAMA MPPS SERNAMEG 2025, DICIEMBRE",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 336000.0,
+    "mes": 1,
+    "mes_nombre": "January 2026",
+    "año": 2026
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "MATERIALES",
+    "comprobante": "857435522",
+    "fecha": "2026-01-12",
+    "num_documento": "27701",
+    "tipo_documento": "FACTURA",
+    "proveedor": "CRISTIAN CÉSAR HIDALGO CUEVAS Y CÍA LTDA.",
+    "descripcion": "MATERIALES IMPRESOS PROGRAMA MPPS SERNAMEG 2025, DICIEMBRE ",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 590000.0,
+    "mes": 1,
+    "mes_nombre": "January 2026",
+    "año": 2026
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "MATERIALES",
+    "comprobante": "857435453",
+    "fecha": "2026-01-09",
+    "num_documento": "28",
+    "tipo_documento": "FACTURA",
+    "proveedor": "PAOLA ALEJANDRA MOYA VALENZUELA ",
+    "descripcion": "FLORES PARA ORNOMENTACIÓN DE LA CEREMONIA DE CIERRE MPPS SERNAMEG 2025, DICIEMBRE ",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 119000.0,
+    "mes": 1,
+    "mes_nombre": "January 2026",
+    "año": 2026
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "MATERIALES",
+    "comprobante": "857435522",
+    "fecha": "2026-01-12",
+    "num_documento": "27700",
+    "tipo_documento": "FACTURA",
+    "proveedor": "CRISTIAN CÉSAR HIDALGO CUEVAS Y CÍA LTDA.",
+    "descripcion": "PRODUCTOS DE LIBERÍA PROGRAMA MPPS SERNAMEG 2025, DICIEMBRE ",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 590000.0,
+    "mes": 1,
+    "mes_nombre": "January 2026",
+    "año": 2026
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "857435550",
+    "fecha": "2026-01-12",
+    "num_documento": "11191",
+    "tipo_documento": "FACTURA",
+    "proveedor": "SOCIEDAD DE TRANSPORTE EJECUTIVO SOL DEL VALLE LTDA",
+    "descripcion": "SERVICIO DE TRASLADO DE LA ORQUESTA DE LA ESCUELA DE MÚSICA JORGE PEÑA A LA UCN, PARA LA CEREMONIA DE CIERRE MPPS SERNAMEG 2025, DICIEMBRE ",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 130000.0,
+    "mes": 1,
+    "mes_nombre": "January 2026",
+    "año": 2026
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "ALIMENTACIÓN",
+    "comprobante": "857435481",
+    "fecha": "2026-01-09",
+    "num_documento": "630",
+    "tipo_documento": "FACTURA",
+    "proveedor": "JUAN LUIS OLIVARES ZAMBRA",
+    "descripcion": "SERVICIO DE COFFE PARA LA CEREMONIA DE CIERRE MPPS SERNAMEG 2025 Y SERVICIO DE BOX INDIVIDUAL PARA LA ORQUESTA QUE PARTICIPÓ EN LA CEREMONIA, DICIEMBRE ",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 1327501.0,
+    "mes": 1,
+    "mes_nombre": "January 2026",
+    "año": 2026
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "MATERIALES",
+    "comprobante": "857433412",
+    "fecha": "2026-11-24",
+    "num_documento": "167402",
+    "tipo_documento": "FACTURA",
+    "proveedor": "OFIMUNDO STUEDEMANN S.A.",
+    "descripcion": "PAGO DE FOTOCOPIAS E IMPRESIONES PERIODO SEP A OCTUBRE DEL PROGRAMA MPPS 2025 (PAGO PROPORCIONADO PARTE DEL MONTO TOTAL FACTURA)",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 200000.0,
+    "mes": 11,
+    "mes_nombre": "November 2026",
+    "año": 2026
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS ",
+    "comprobante": "20524777 - 010",
+    "fecha": "2025-07-03",
+    "num_documento": "172",
+    "tipo_documento": "BOLETA HONORARIOS",
+    "proveedor": "RODRIGO IGNACIO MASSA SLIMMING",
+    "descripcion": "RELATOR MÓDULO 2 COMUNICACIÓN EFECTIVA Y ORATORIA PROGRAMA MPPS DE SERNAMEG JUNIO 2025",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 1171350.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS ",
+    "comprobante": "20509781 - 076",
+    "fecha": "2025-06-30",
+    "num_documento": "126",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "CAROLINA DEL PILAR SALINAS ALARCÓN",
+    "descripcion": "RELATORA MODULO 0 CONTRUCCIÓN DE PROYECTO INDIVIDUAL PROGRAMA MPPS DE SERNAMEG JUNIO 2025",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 273600.0,
+    "mes": 6,
+    "mes_nombre": "June 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS ",
+    "comprobante": "20509781 - 076",
+    "fecha": "2025-06-30",
+    "num_documento": "127",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "CAROLINA DEL PILAR SALINAS ALARCÓN",
+    "descripcion": "RELATORA MODULO 3 TOMA DE DECISIONES Y NEGOCIACIÓN ENFOQUE GEN. PROGRAMA MPPS DE SERNAMEG JUNIO 2025",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 444600.0,
+    "mes": 6,
+    "mes_nombre": "June 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS ",
+    "comprobante": "20509842 - 067",
+    "fecha": "2025-06-30",
+    "num_documento": "192",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "YANIXZA ISABEL ALFARO BRICEÑO",
+    "descripcion": "RELATORA MODULO 5 GESTIÓN DE PROYECTOS Y RENDICIÓN DE CUENTAS PROGRAMA MPPS DE SERNAMEG JUNIO 2025",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 273600.0,
+    "mes": 6,
+    "mes_nombre": "June 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20453682 - 018",
+    "fecha": "2025-06-14",
+    "num_documento": "8",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "REEMBOLSO TRASLADO BENEFICIARIAS - OVALLE - PUNITAQUI, LA CHINBA, OVALLE, POR PARTICIPACIÓN EN EL PROGRAMA MPPS, SEGÚN ASISTENCIA AL COMPONENTE 2 MODULO 2 EN LA CIUDAD DE OVALLE",
+    "forma_pago": "EFECTIVO",
+    "monto": 32500.0,
+    "mes": 6,
+    "mes_nombre": "June 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20453682 - 018",
+    "fecha": "2025-06-14",
+    "num_documento": "9",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "REEMBOLSO TRASLADO BENEFICIARIAS - OVALLE - PUNITAQUI, LA CHINBA, OVALLE, POR PARTICIPACIÓN EN EL PROGRAMA MPPS, SEGÚN ASISTENCIA AL COMPONENTE 2 MODULO 2 EN LA CIUDAD DE OVALLE",
+    "forma_pago": "EFECTIVO",
+    "monto": 2500.0,
+    "mes": 6,
+    "mes_nombre": "June 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20453682 - 018",
+    "fecha": "2025-06-21",
+    "num_documento": "10",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "REEMBOLSO TRASLADO BENEFICIARIAS - ANDACOLLO-COQUIMBO- LA SERENA, POR PARTICIPACIÓN EN EL PROGRAMA MPPS, SEGÚN ASISTENCIA AL COMPONENTE 2 MÓDULO 2 EN LA CIUDAD DE LA SERENA ",
+    "forma_pago": "EFECTIVO ",
+    "monto": 20000.0,
+    "mes": 6,
+    "mes_nombre": "June 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20453682 - 018",
+    "fecha": "2025-06-27",
+    "num_documento": "11",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "REEMBOLSO TRASLADO BENEFICIARIAS - VICUÑA - LA SERENA, POR PARTICIPACIÓN EN EL PROGRAMA MPPS, SEGÚN ASISTENCIA AL COMPONENTE 2 MÓDULO 2 EN LA CIUDAD DE LA SERENA",
+    "forma_pago": "EFECTIVO",
+    "monto": 20000.0,
+    "mes": 6,
+    "mes_nombre": "June 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20453682 - 018",
+    "fecha": "2025-06-27",
+    "num_documento": "238901477",
+    "tipo_documento": "BOLETA DE COMPRA VENTA ",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "COMPRA DE GALLETAS PARA EL COFFEE BREAK EN LOS TALLERES PRESENCIALES QUE SE REALIZARON EN OVALLE, LA SERENA, COQUIMBO, POR PORGRAMA MPPS_LIDER ",
+    "forma_pago": "EFECTIVO",
+    "monto": 11000.0,
+    "mes": 6,
+    "mes_nombre": "June 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "ALIMENTACIÓN",
+    "comprobante": "20501567 - 002",
+    "fecha": "2025-06-26",
+    "num_documento": "903",
+    "tipo_documento": "FACTURA ",
+    "proveedor": "CLAUDIO ALBERTO HERNÁNDEZ HERNÁNDEZ",
+    "descripcion": "COFFE BREAK PARA LOS MÓDULOS PRESENCIALES EL PROGRAMA DE MUJERES Y PARTICIPACIÓN SOCIAL MES DE JUNIO",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 240000.0,
+    "mes": 6,
+    "mes_nombre": "June 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS ",
+    "comprobante": "20620366 - 030",
+    "fecha": "2025-07-31",
+    "num_documento": "301",
+    "tipo_documento": "BOLETA HONORARIOS",
+    "proveedor": "ERIKA PILAR VALENTINA LÓPEZ GUERRERO",
+    "descripcion": "RELATORA MÓDULO 7 PARTICIPACIÓN Y PROCESOS ELECTORALES PROGRAMA MPPS DE SERNAMEG JULIO 2025",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 273600.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS ",
+    "comprobante": "20620718 - 031",
+    "fecha": "2025-07-31",
+    "num_documento": "233",
+    "tipo_documento": "BOLETA HONORARIOS",
+    "proveedor": "YARELLA SILVANA CARVAJAL CARVAJAL",
+    "descripcion": "RELATORA MÓDULO 4 GESTIÓN DE CRISIS Y VOCERÍAS PROGRAMA MPPS DE SERNAMEG JULIO 2025",
+    "forma_pago": "VALE VISTA ",
+    "monto": 1171350.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS ",
+    "comprobante": "20620718 - 031",
+    "fecha": "2025-07-31",
+    "num_documento": "234",
+    "tipo_documento": "BOLETA HONORARIOS",
+    "proveedor": "YARELLA SILVANA CARVAJAL CARVAJAL",
+    "descripcion": "RELATORA MÓDULO 6 USO ESTRATEGICO DE REDES SOCIALES PROGRAMA MPPS DE SERNAMEG JULIO 2025",
+    "forma_pago": "VALE VISTA ",
+    "monto": 273600.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "MATERIAL ",
+    "comprobante": "20561210 - 004",
+    "fecha": "2025-07-14",
+    "num_documento": "114542",
+    "tipo_documento": "FACTURA",
+    "proveedor": "COMERCIALIZADORA DE PAPELES INDUSTRIALES E INSUMOS GRAFICOS LTDA",
+    "descripcion": "COMPRA DE MATERIALES VARIOS PARA TALLERES DE LOS MÓDULOS PRESENCIALES - COMPONENTE 2",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 64096.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS ",
+    "comprobante": "20612662 - 002",
+    "fecha": "2025-07-29",
+    "num_documento": "913",
+    "tipo_documento": "FACTURA",
+    "proveedor": "CLAUDIO ALBERTO HERNANDEZ HERNANDEZ",
+    "descripcion": "COMPRA DE COFFEE PARA LOS TALLERES PRESENCIALES, DÍA 04, 05, 12 Y 19 DE JULIO - PROGRAMA MPPS - SERNAMEG",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 240000.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20549986 - 027",
+    "fecha": "2025-07-04",
+    "num_documento": "12",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "REEMBOLSO TRASLADO DE BENEFICIARIAS - VICUÑA- LA SERENA, POR PARTICIPACIÓNEN EL PROGRAMA MPPS, SEGÚN ASISTENCIA AL COMPONENTE 2 MÓDULO 4 EN LA CIUDAD DE LA SERENA",
+    "forma_pago": "EFECTIVO",
+    "monto": 20000.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20549986 - 027",
+    "fecha": "2025-07-12",
+    "num_documento": "13",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "REEMBOLSO TRSLADO DE BENEFICIOS -OVALLE, PUNITAQUI, LA CHIMBA, OVALLE, POR PARTICIPACIÓN EN EL PROGRAMA MPPS, SEGÚN ASISTENCIA AL COMPONENTE 2 MÓDULO 4 EN LA CIUDAD DE OVALLE ",
+    "forma_pago": "EFECTIVO",
+    "monto": 28000.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20549986 - 027",
+    "fecha": "2025-07-12",
+    "num_documento": "14",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "REEMBOLSO TRASLADO DE BENEFICIARIAS - OVALLE - PUNITAQUI POR PARTICIPACIÓN EN EL PROGRAMA MPPS, SEGÚN ASISTENCIA AL COMPONENTE 2 MÓDULO 4 EN LA CIUDAD DE OVALLE ",
+    "forma_pago": "EFECTIVO",
+    "monto": 2000.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "ALIMENTACIÓN",
+    "comprobante": "20549986 - 027",
+    "fecha": "2025-07-29",
+    "num_documento": "2410612193",
+    "tipo_documento": "BOLETA ",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "COMPRA DE GALLETAS PARA EL COFFEE BREAK EN LOS TALLERES PRESENCIALES EN LA CIUDAD DE OVALLE, ILLAPEL, LA SERENA Y COQUIMBO, POR EL PROGRAMA MPSS_LIDER ",
+    "forma_pago": "EFECTIVO",
+    "monto": 19200.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "20721716-021",
+    "fecha": "2025-08-29",
+    "num_documento": "131",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "CAROLINA DEL PILAR SALINAS ALARCÓN",
+    "descripcion": "PRIMER AVANCE EVALUACIÓN TRABAJOS PROGRAMA MPPS SERNAMEG_AGOSTO_B:131_CAROLINA SALINAS_31101889",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 598500.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "20721639-014",
+    "fecha": "2025-08-29",
+    "num_documento": "159",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "ALEX FERNANDO VALDIVIA ALBORNOZ ",
+    "descripcion": "RELATOR MODULO 9 GESTIÓN DEL TIEMPO PROGRAMA MPPS DE SERNAMEG AGOSTO 2025_AGOSTO_B:159_ALEX VALDIVIA_31101889",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 273600.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "20721686-036",
+    "fecha": "2025-08-29",
+    "num_documento": "303",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "ERIKA PILAR VALENTINA LÓPEZ GUERRERO",
+    "descripcion": "RELATOR MODULO 8 INTELIGENCIA EMOCIONAL PROGRAMA MPPS DE SERNAMEG AGOSTO 2025_AGOSTO_B:303_ERIKA LÓPEZ_31101889",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 1171350.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "FACTURA",
+    "comprobante": "20739831-003",
+    "fecha": "2025-08-29",
+    "num_documento": "939",
+    "tipo_documento": "FACTURA ",
+    "proveedor": "CLAUDIO ALBERTO HERNANDEZ HERNANDEZ",
+    "descripcion": "RINCON LIGUANO_COFFEE PARA LOS TALLERES PRESENCIALES (DÍA 01, 02, 09 y 23 de agosto) DEL PROGRAMA MPPS -SERNAMEG 2025_ 31101889",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 240000.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8412648156",
+    "fecha": "2025-08-21",
+    "num_documento": "172",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "RODRIGO IGNACIO MASSA SLIMMING ",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE JULIO, SEGÚN BOLETA 172(Rendición Agosto)",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 198650.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8412648156",
+    "fecha": "2025-08-21",
+    "num_documento": "301",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "ERIKA PILAR VALENTINA LÓPEZ GUERRERO",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE JULIO, SEGÚN BOLETA 301(Rendición Agosto)",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 46400.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8412648156",
+    "fecha": "2025-08-21",
+    "num_documento": "233",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "YARELLA SILVANA CARVAJAL CARVAJAL ",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE JULIO, SEGÚN BOLETA 233(Rendición Agosto)",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 198650.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8412648156",
+    "fecha": "2025-08-21",
+    "num_documento": "234",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "YARELLA SILVANA CARVAJAL CARVAJAL ",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE JULIO, SEGÚN BOLETA 234 (Rendición Agosto)",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 46400.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8346192106",
+    "fecha": "2025-07-21",
+    "num_documento": "126",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "CAROLINA DEL PILAR SALINAS ALARCÓN",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE JUNIO, SEGÚN BOLETA 126(Rendición Julio)",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 46400.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8346192106",
+    "fecha": "2025-07-21",
+    "num_documento": "127",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "CAROLINA DEL PILAR SALINAS ALARCÓN",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE JUNIO, SEGÚN BOLETA 127(Rendición Julio)",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 75400.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "HONORARIOS",
+    "comprobante": "8346192106",
+    "fecha": "2025-07-21",
+    "num_documento": "192",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "YANIXZA ISABEL ALFARO BRICEÑO",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE JUNIO, SEGÚN BOLETA 192 (Rendición Julio)",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 46400.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "857434624",
+    "fecha": "2025-12-19",
+    "num_documento": "18",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "REEMBOLSO TRASLADO BENEFICIARIAS – PUNITAQUI - OVALLE, POR PARTICIPACIÓN EN LA CEREMONIA DE CIERRE DEL PROGRAMA MPPS, REALIZADO 16 DIC EN LA UCN",
+    "forma_pago": "EFECTIVO",
+    "monto": 65000.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "857434624",
+    "fecha": "2025-12-19",
+    "num_documento": "19",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "REEMBOLSO TRASLADO BENEFICIARIAS – VICUÑA – ANDACOLLO - OVALLE, POR PARTICIPACIÓN EN LA CEREMONIA DE CIERRE DEL PROGRAMA MPPS, REALIZADO 16 DIC EN LA UCN",
+    "forma_pago": "EFECTIVO",
+    "monto": 67500.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "857434624",
+    "fecha": "2025-12-19",
+    "num_documento": "20",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "REEMBOLSO TRASLADO BENEFICIARIAS – VICUÑA – SALAMANCA - PUNITAQUI, POR PARTICIPACIÓN EN LA CEREMONIA DE CIERRE DEL PROGRAMA MPPS, REALIZADO 16 DIC EN LA UCN",
+    "forma_pago": "EFECTIVO",
+    "monto": 47500.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "857434624",
+    "fecha": "2025-12-19",
+    "num_documento": "21",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "REEMBOLSO TRASLADO BENEFICIARIAS – VICUÑA -OVALLE, POR PARTICIPACIÓN EN LA CEREMONIA DE CIERRE DEL PROGRAMA MPPS, REALIZADO 16 DIC EN LA UCN",
+    "forma_pago": "EFECTIVO",
+    "monto": 30000.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "8346192106",
+    "fecha": "2025-07-21",
+    "num_documento": "85",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE JUNIO, SEGÚN BOLETA 85",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 21750.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "8346192106",
+    "fecha": "2025-07-21",
+    "num_documento": "134",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "CLAUDIA BORTOLOTTI NARDON ",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE JUNIO, SEGÚN BOLETA 134",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 50750.0,
+    "mes": 7,
+    "mes_nombre": "July 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "8480565096",
+    "fecha": "2025-09-22",
+    "num_documento": "89",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE AGOSTO, SEGÚN BOLETA 89",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 21750.0,
+    "mes": 9,
+    "mes_nombre": "September 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "8480565096",
+    "fecha": "2025-09-22",
+    "num_documento": "139",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "CLAUDIA BORTOLOTTI NARDON",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE AGOSTO, SEGÚN BOLETA 139",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 50750.0,
+    "mes": 9,
+    "mes_nombre": "September 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "8545515886",
+    "fecha": "2025-10-20",
+    "num_documento": "90",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE SEPTIEMBRE, SEGÚN BOLETA 90",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 21750.0,
+    "mes": 10,
+    "mes_nombre": "October 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "8545515886",
+    "fecha": "2025-10-20",
+    "num_documento": "140",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "CLAUDIA BORTOLOTTI NARDON",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE SEPTIEMBRE, SEGÚN BOLETA 140",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 50750.0,
+    "mes": 10,
+    "mes_nombre": "October 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "8611719456",
+    "fecha": "2025-11-20",
+    "num_documento": "93",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE OCTUBRE, SEGÚN BOLETA 93",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 21750.0,
+    "mes": 11,
+    "mes_nombre": "November 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "8611719456",
+    "fecha": "2025-11-20",
+    "num_documento": "141",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "CLAUDIA BORTOLOTTI NARDON",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE OCTUBRE, SEGÚN BOLETA 141",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 50750.0,
+    "mes": 11,
+    "mes_nombre": "November 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "857435158",
+    "fecha": "2025-12-23",
+    "num_documento": "98",
+    "tipo_documento": "HONORARIOS",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "ASISTENTE ADM Y RENDICIÓN DE CTAS - PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025 DICIEMBRE",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 128250.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "857434738",
+    "fecha": "2025-12-23",
+    "num_documento": "143",
+    "tipo_documento": "HONORARIOS",
+    "proveedor": "CLAUDIA RAQUELE BORTOLOTTI NARDON",
+    "descripcion": "COORDINADORA GENERAL- PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025 DICIEMBRE",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 299250.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "DCTO EN ESPERA",
+    "fecha": null,
+    "num_documento": "98",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE DICIEMBRE, SEGÚN BOLETA 98",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 21750.0,
+    "mes": null,
+    "mes_nombre": "Pendiente",
+    "año": null
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "DCTO EN ESPERA",
+    "fecha": null,
+    "num_documento": "143",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "CLAUDIA RAQUELE BORTOLOTTI NARDON",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE DICIEMBRE, SEGÚN BOLETA 143",
+    "forma_pago": "TRANSFERENCIA",
+    "monto": 50750.0,
+    "mes": null,
+    "mes_nombre": "Pendiente",
+    "año": null
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "20722381-012",
+    "fecha": "2025-08-29",
+    "num_documento": "89",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "ASISTENTE ADM Y RENDICIÓN DE CTAS-PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025_AGOSTO_B:89_PAOLA MALDONADO_31101889",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 128250.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "20721639-096",
+    "fecha": "2025-08-29",
+    "num_documento": "139",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "CLAUDIA RAQUELE BORTOLOTTI NARDON ",
+    "descripcion": "COORDINADORA GENERAL DEL PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025_AGOSTO_B:139_CLAUDIA BORTOLOTTI_31101889",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 299250.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "8412648156",
+    "fecha": "2025-08-21",
+    "num_documento": "137",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "CLAUDIA RAQUELE BORTOLOTTI NARDON ",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE JULIO, SEGÚN BOLETA 137",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 50750.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "8412648156",
+    "fecha": "2025-08-21",
+    "num_documento": "86",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE JULIO, SEGÚN BOLETA 86",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 21750.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "857431427",
+    "fecha": "2025-09-26",
+    "num_documento": "90",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "ASISTENTE ADM Y RENDICIÓN DE CTAS-PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025_SEPTIEMBRE_B:90_PAOLA MALDONADO_31101889",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 128250.0,
+    "mes": 9,
+    "mes_nombre": "September 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "587431035",
+    "fecha": "2025-09-26",
+    "num_documento": "140",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "CLAUDIA RAQUELE BORTOLOTTI NARDON ",
+    "descripcion": "COORDINADORA GENERAL DEL PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025_SEPTIEMBRE_B:140_CLAUDIA BORTOLOTTI_31101889",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 299250.0,
+    "mes": 9,
+    "mes_nombre": "September 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "857432689",
+    "fecha": "2025-10-27",
+    "num_documento": "93",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "ASISTENTE ADM Y RENDICIÓN DE CTAS-PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025_OCTUBRE_B:93_PAOLA MALDONADO_31101889",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 128250.0,
+    "mes": 10,
+    "mes_nombre": "October 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "857432291",
+    "fecha": "2025-10-27",
+    "num_documento": "141",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "CLAUDIA RAQUELE BORTOLOTTI NARDON ",
+    "descripcion": "COORDINADORA GENERAL DEL PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025_OCTUBRE_B:141_CLAUDIA BORTOLOTTI_31101889",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 299250.0,
+    "mes": 10,
+    "mes_nombre": "October 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "857433858",
+    "fecha": "2025-11-26",
+    "num_documento": "95",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "ASISTENTE ADM Y RENDICIÓN DE CTAS-PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025_NOVIEMBRE_B:95_PAOLA MALDONADO_31101889",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 128250.0,
+    "mes": 11,
+    "mes_nombre": "November 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "857433587",
+    "fecha": "2025-11-26",
+    "num_documento": "142",
+    "tipo_documento": "BOLETA HONORARIOS ",
+    "proveedor": "CLAUDIA RAQUELE BORTOLOTTI NARDON ",
+    "descripcion": "COORDINADORA GENERAL DEL PROGRAMA MUJER Y PARTICIPACIÓN POLÍTICA Y SOCIAL 2025_NOVIEMBRE_B:142_CLAUDIA BORTOLOTTI_31101889",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 299250.0,
+    "mes": 11,
+    "mes_nombre": "November 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "8686615216",
+    "fecha": "2025-12-22",
+    "num_documento": "95",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE NOVIEMBRE, SEGÚN BOLETA 95",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 21750.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTO PERSONAL ",
+    "item": "HONORARIOS",
+    "comprobante": "8686615216",
+    "fecha": "2025-12-22",
+    "num_documento": "142",
+    "tipo_documento": "RETENCIÓN HONORARIOS",
+    "proveedor": "CLAUDIA RAQUELE BORTOLOTTI NARDON ",
+    "descripcion": "DECLARACIÓN DE PAGO DE IMPUESTO - FORMULARIO 29 -POR HONORARIOS CORRESPONDIENTE AL MES DE NOVIEMBRE, SEGÚN BOLETA 142",
+    "forma_pago": "TRANSFERENCIA ",
+    "monto": 50750.0,
+    "mes": 12,
+    "mes_nombre": "December 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20655455-005",
+    "fecha": "2025-08-09",
+    "num_documento": "15",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "REP.FONDO FIJO_SI 113676 OC 105059_09-08-2025_B: 15_REEMBOLSO TRASLADO BENEFICIARIAS-OVALLE -PUNITAQUI-COMBARBALÁ, POR PARTICIPACIÓN EN EL PROGRAMA MPPS COMPONENTE 2 MÓDULO 8_MPPS SERNAMEG_31101889",
+    "forma_pago": "EFECTIVO",
+    "monto": 22000.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20655455-005",
+    "fecha": "2025-08-22",
+    "num_documento": "16",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "REP.FONDO FIJO_SI 113676 OC 105059_22-08-2025_B: 16_REEMBOLSO TRASLADO BENEFICIARIAS VICUÑA - LA SERENA, POR PARTICIPACIÓN EN EL PROGRAMA MPPS COMPONENTE 2 MÓDULO 8_MPPS SERNAMEG_31101889",
+    "forma_pago": "EFECTIVO",
+    "monto": 10000.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "TRASLADO",
+    "comprobante": "20655455-005",
+    "fecha": "2025-08-30",
+    "num_documento": "17",
+    "tipo_documento": "OTRO",
+    "proveedor": "PAOLA MALDONADO CORTÉS",
+    "descripcion": "REP.FONDO FIJO_SI 113676 OC 105059_30-08-2025_B: 17_REEMBOLSO TRASLADO BENEFICIARIAS ANDACOLLO - COQUIMBO, POR PARTICIPACIÓN EN EL PROGRAMA MPPS COMPONENTE 2 MÓDULO 8_MPPS SERNAMEG_31101889",
+    "forma_pago": "EFECTIVO",
+    "monto": 10000.0,
+    "mes": 8,
+    "mes_nombre": "August 2025",
+    "año": 2025
+  },
+  {
+    "tipo_gasto": "GASTOS OPERACIONALES",
+    "item": "GASTOS DE GENERALES DE FUNCIONAMIENTO",
+    "comprobante": "30371",
+    "fecha": "2025-01-14",
+    "num_documento": "30371",
+    "tipo_documento": "FACTURA",
+    "proveedor": "UNIVERSIDAD CATÓLICA DEL NORTE",
+    "descripcion": "GASTOS GENERALES DE FUNCIONAMIENTO PACTADO POR CONTRATO – INGRESO A LA UNIVERSIDAD CATÓLICA DEL NORTE ",
+    "forma_pago": "INTERNO - TRANSFERENCIA",
+    "monto": 4600000.0,
+    "mes": 1,
+    "mes_nombre": "January 2025",
+    "año": 2025
+  }
+];
+
+
+        let datosOriginales = DATOS_FINANCIEROS;
+        let datosFiltrados = [];
+        let chartMensual = null;
+        let chartTipoGasto = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarDashboard();
+        });
+
+        function inicializarDashboard() {
+            const tiposGasto = [...new Set(datosOriginales.map(r => r.tipo_gasto))].sort();
+            const selectTipo = document.getElementById('filtroTipoGasto');
+            tiposGasto.forEach(tipo => {
+                const option = document.createElement('option');
+                option.value = tipo;
+                option.textContent = tipo;
+                selectTipo.appendChild(option);
+            });
+
+            const meses = [...new Set(datosOriginales.map(r => r.mes_nombre))].sort((a, b) => {
+                if (a === 'Pendiente') return 1;
+                if (b === 'Pendiente') return -1;
+                const [mesA, añoA] = a.split(' ');
+                const [mesB, añoB] = b.split(' ');
+                const mesesOrden = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                   'July', 'August', 'September', 'October', 'November', 'December'];
+                if (añoA !== añoB) return parseInt(añoA) - parseInt(añoB);
+                return mesesOrden.indexOf(mesA) - mesesOrden.indexOf(mesB);
+            });
+            const selectMes = document.getElementById('filtroMes');
+            meses.forEach(mes => {
+                const option = document.createElement('option');
+                option.value = mes;
+                option.textContent = traducirMes(mes);
+                selectMes.appendChild(option);
+            });
+
+            document.getElementById('filtroTipoGasto').addEventListener('change', aplicarFiltros);
+            document.getElementById('filtroMes').addEventListener('change', aplicarFiltros);
+            document.getElementById('busqueda').addEventListener('input', aplicarFiltros);
+
+            aplicarFiltros();
+        }
+
+        function traducirMes(mes) {
+            if (mes === 'Pendiente') return 'Pendiente';
+            const meses = {
+                'January': 'Enero', 'February': 'Febrero', 'March': 'Marzo',
+                'April': 'Abril', 'May': 'Mayo', 'June': 'Junio',
+                'July': 'Julio', 'August': 'Agosto', 'September': 'Septiembre',
+                'October': 'Octubre', 'November': 'Noviembre', 'December': 'Diciembre'
+            };
+            const partes = mes.split(' ');
+            return meses[partes[0]] + ' ' + partes[1];
+        }
+
+        function aplicarFiltros() {
+            const tipoGasto = document.getElementById('filtroTipoGasto').value;
+            const mes = document.getElementById('filtroMes').value;
+            const busqueda = document.getElementById('busqueda').value.toLowerCase();
+
+            datosFiltrados = datosOriginales.filter(registro => {
+                const cumpleTipo = !tipoGasto || registro.tipo_gasto === tipoGasto;
+                const cumpleMes = !mes || registro.mes_nombre === mes;
+                const cumpleBusqueda = !busqueda || 
+                    registro.descripcion?.toLowerCase().includes(busqueda) ||
+                    registro.proveedor?.toLowerCase().includes(busqueda) ||
+                    registro.item?.toLowerCase().includes(busqueda);
+                
+                return cumpleTipo && cumpleMes && cumpleBusqueda;
+            });
+
+            actualizarDashboard();
+        }
+
+        function resetearFiltros() {
+            document.getElementById('filtroTipoGasto').value = '';
+            document.getElementById('filtroMes').value = '';
+            document.getElementById('busqueda').value = '';
+            aplicarFiltros();
+        }
+
+        function actualizarDashboard() {
+            actualizarKPIs();
+            actualizarGraficos();
+            actualizarTabla();
+        }
+
+        function actualizarKPIs() {
+            const totalGastos = datosFiltrados.reduce((sum, r) => sum + (r.monto || 0), 0);
+            const numRegistros = datosFiltrados.length;
+            const promedioGasto = numRegistros > 0 ? totalGastos / numRegistros : 0;
+
+            const gastosOperacionales = datosFiltrados
+                .filter(r => r.tipo_gasto === 'GASTOS OPERACIONALES')
+                .reduce((sum, r) => sum + (r.monto || 0), 0);
+
+            const gastosPersonales = datosFiltrados
+                .filter(r => r.tipo_gasto === 'GASTO PERSONAL ')
+                .reduce((sum, r) => sum + (r.monto || 0), 0);
+
+            const kpiHTML = `
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Gastos</div>
+                    <div class="kpi-value money">$${formatearNumero(totalGastos)}</div>
+                </div>
+                <div class="kpi-card secondary">
+                    <div class="kpi-label">Número de Registros</div>
+                    <div class="kpi-value">${numRegistros}</div>
+                </div>
+                <div class="kpi-card secondary">
+                    <div class="kpi-label">Promedio por Registro</div>
+                    <div class="kpi-value">$${formatearNumero(promedioGasto)}</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Gastos Operacionales</div>
+                    <div class="kpi-value money">$${formatearNumero(gastosOperacionales)}</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Gastos Personal</div>
+                    <div class="kpi-value money">$${formatearNumero(gastosPersonales)}</div>
+                </div>
+            `;
+
+            document.getElementById('kpiGrid').innerHTML = kpiHTML;
+        }
+
+        function actualizarGraficos() {
+            const datosPorMes = {};
+            datosFiltrados.filter(r => r.mes_nombre !== 'Pendiente').forEach(registro => {
+                const mes = registro.mes_nombre;
+                if (!datosPorMes[mes]) {
+                    datosPorMes[mes] = {};
+                }
+                const tipo = registro.tipo_gasto;
+                datosPorMes[mes][tipo] = (datosPorMes[mes][tipo] || 0) + (registro.monto || 0);
+            });
+
+            const mesesOrdenados = Object.keys(datosPorMes).sort((a, b) => {
+                const [mesA, añoA] = a.split(' ');
+                const [mesB, añoB] = b.split(' ');
+                const mesesOrden = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                   'July', 'August', 'September', 'October', 'November', 'December'];
+                if (añoA !== añoB) return parseInt(añoA) - parseInt(añoB);
+                return mesesOrden.indexOf(mesA) - mesesOrden.indexOf(mesB);
+            });
+
+            const labels = mesesOrdenados.map(m => traducirMes(m));
+            const datasets = [];
+
+            const tiposGasto = [...new Set(datosFiltrados.map(r => r.tipo_gasto))];
+            const colores = {
+                'GASTOS OPERACIONALES': { bg: 'rgba(52, 152, 219, 0.8)', border: 'rgba(52, 152, 219, 1)' },
+                'GASTO PERSONAL ': { bg: 'rgba(155, 89, 182, 0.8)', border: 'rgba(155, 89, 182, 1)' }
+            };
+
+            tiposGasto.forEach(tipo => {
+                const datos = mesesOrdenados.map(mes => datosPorMes[mes][tipo] || 0);
+                datasets.push({
+                    label: tipo,
+                    data: datos,
+                    backgroundColor: colores[tipo]?.bg || 'rgba(149, 165, 166, 0.8)',
+                    borderColor: colores[tipo]?.border || 'rgba(149, 165, 166, 1)',
+                    borderWidth: 2
+                });
+            });
+
+            if (chartMensual) chartMensual.destroy();
+            const ctxMensual = document.getElementById('chartMensual').getContext('2d');
+            chartMensual = new Chart(ctxMensual, {
+                type: 'bar',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': $' + formatearNumero(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + formatearNumero(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const datosPorTipo = {};
+            datosFiltrados.forEach(registro => {
+                const tipo = registro.tipo_gasto;
+                datosPorTipo[tipo] = (datosPorTipo[tipo] || 0) + (registro.monto || 0);
+            });
+
+            if (chartTipoGasto) chartTipoGasto.destroy();
+            const ctxTipo = document.getElementById('chartTipoGasto').getContext('2d');
+            chartTipoGasto = new Chart(ctxTipo, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(datosPorTipo),
+                    datasets: [{
+                        data: Object.values(datosPorTipo),
+                        backgroundColor: [
+                            'rgba(52, 152, 219, 0.8)',
+                            'rgba(155, 89, 182, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(52, 152, 219, 1)',
+                            'rgba(155, 89, 182, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const porcentaje = ((context.parsed / total) * 100).toFixed(1);
+                                    return context.label + ': $' + formatearNumero(context.parsed) + 
+                                           ' (' + porcentaje + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function actualizarTabla() {
+            const tbody = document.getElementById('tablaBody');
+            
+            if (datosFiltrados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="no-data">No se encontraron registros</td></tr>';
+                return;
+            }
+
+            const filas = datosFiltrados.map(registro => {
+                const tagClass = registro.tipo_gasto === 'GASTOS OPERACIONALES' ? 
+                    'tag-operacional' : 'tag-personal';
+                const fecha = registro.fecha ? new Date(registro.fecha).toLocaleDateString('es-CL') : 
+                    '<span class="tag tag-pendiente">PENDIENTE</span>';
+                
+                return `
+                    <tr>
+                        <td>${fecha}</td>
+                        <td><span class="tag ${tagClass}">${registro.tipo_gasto}</span></td>
+                        <td>${registro.item || ''}</td>
+                        <td>${registro.proveedor || ''}</td>
+                        <td>${(registro.descripcion || '').substring(0, 80)}${registro.descripcion?.length > 80 ? '...' : ''}</td>
+                        <td class="money">$${formatearNumero(registro.monto || 0)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML = filas;
+        }
+
+        function formatearNumero(numero) {
+            return Math.round(numero).toLocaleString('es-CL');
+        }
+    </script>
+</body>
+</html>
